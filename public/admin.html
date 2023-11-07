@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin panel</title>
+</head>
+
+<body>
+    <h1>This control the phone call on the overlay</h1>
+    <input type="text" value="+916353260512" id="phoneNumber" placeholder="Enter a phone number">
+    <button id="callButton">Call</button>
+    <!-- <button id="answerButton">Answer</button> -->
+    <button id="endButton">End</button>
+    <script>
+        /**
+         * Admin Panel - Phone Call Control
+         * 
+         * This HTML and JavaScript code creates an admin panel for controlling phone calls.
+         * It allows you to initiate phone calls, answer incoming calls, and end ongoing calls.
+         * 
+         * @function initializeWebSocket - Initializes the WebSocket connection and handles reconnection.
+         * 
+         * @param {void} - No parameters needed.
+         * @returns {void}
+         * 
+         * @listens click - Handles the click event for the 'Call' and 'End' buttons.
+         * 
+         * The 'initializeWebSocket' function sets up a WebSocket connection to enable real-time communication.
+         * Users can enter a phone number, initiate calls, and end calls with this admin panel.
+         */
+        function initializeWebSocket() {
+            // Initialize the WebSocket connection
+            websocket = new WebSocket(`wss://${window.location.host}`);
+            websocket.onclose = function () {
+                // WebSocket is closed. Reinitialize it.
+                console.log('WebSocket is closed. Reopening...');
+                initializeWebSocket();
+            };
+        }
+
+        // Call the 'initializeWebSocket' function to set up the WebSocket connection
+        initializeWebSocket();
+
+        // Get references to the DOM elements
+        // const answerBtn = document.getElementById('answerButton')  // Uncomment this line to enable 'Answer' button
+        const endBtn = document.getElementById('endButton')
+        const callBtn = document.getElementById('callButton');
+        const phoneNumberInput = document.getElementById('phoneNumber');
+
+        // Handle the click event for the 'Call' button
+        callBtn.addEventListener('click', () => {
+            const phoneNumber = phoneNumberInput.value;
+            websocket.send(JSON.stringify({ message: 'call', phoneNumber }));
+        });
+
+        // Uncomment this section to enable the 'Answer' button
+        // answerBtn.addEventListener('click', () => {
+        //     websocket.send(JSON.stringify({ message: 'answer' }))
+        // })
+
+        // Handle the click event for the 'End' button
+        endBtn.addEventListener('click', () => {
+            websocket.send(JSON.stringify({ message: 'end' }))
+        })
+    </script>
+</body>
+
+</html>

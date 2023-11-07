@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twilio Phone</title>
+</head>
+
+<body>
+    <div id="overlay">
+        <h1>Join the conversation on twitch</h1>
+    </div>
+    <script src="https://sdk.twilio.com/js/client/v1.14/twilio.js"></script>
+    <script>
+        /**
+        * Twilio Phone Interface
+        * 
+        * This HTML and JavaScript code provides the interface for a Twilio-powered phone system.
+        * It allows users to join and control phone conversations with Twilio services.
+        * 
+        * @function init - Initializes the phone system and sets up WebSocket communication.
+        * 
+        * @async
+        * @param {void} - No parameters needed.
+        * @returns {void}
+        * 
+        * @listens window.onload - Calls the 'init' function when the web page is loaded.
+        * 
+        * The Twilio.Device is used to control and manage phone calls, and WebSocket is used for real-time communication.
+        * Users can make and receive calls, answer calls, and end ongoing calls.
+        * 
+        * For more details on how to use this interface with your Twilio setup, please refer to the project documentation.
+        * https://youtu.be/BvZwKFvF-HA?si=zW6Y-biyXa6-V3KP
+        */
+        async function intit() {
+            // Fetch the Twilio token from the server
+            const response = await fetch('/token', { method: 'POST' });
+            const data = await response.json();
+
+            if (Twilio.Device) {
+                // Setup the Twilio Device with the obtained token
+                const device = Twilio.Device.setup(data.token, { debug: true });
+                const websocket = new WebSocket(`wss://${window.location.host}`)
+
+                // Handle the 'ready' event when the device is operational
+                device.on('ready', (device) => {
+                    console.log('Browser Phone device operational');
+                })
+
+                // Handle WebSocket messages
+                websocket.onmessage = (event) => {
+                    // Use a FileReader to read the Blob as text
+                    const reader = new FileReader();
+                    reader.onload = function () {
+                        const data = JSON.parse(reader.result);
+                        switch (data.message) {
+                            case 'answer':
+                                // Answer an incoming call
+                                if (device?.activeConnection()?.status() === 'pending') {
+                                    device.activeConnection.accept();
+                                }
+                                break;
+                            case 'end':
+                                // End an ongoing call or reject an incoming call
+                                if (device?.activeConnection()?.status() === 'pending') {
+                                    device.activeConnection.reject();
+                                } else {
+                                    console.log(device.activeConnection())
+                                    device.activeConnection().disconnect();
+                                }
+                                break;
+                            case 'call':
+                                // Make an outgoing call
+                                if (device?.activeConnection()?.status() !== 'pending') {
+                                    const phoneNumber = data.phoneNumber;
+                                    const params = {
+                                        To: phoneNumber
+                                    };
+                                    const conn = device.connect(params);
+                                    console.log(conn);
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    };
+                    reader.readAsText(event.data);
+                };
+            }
+        }
+        // Call the 'init' function when the web page loads
+        intit()
+    </script>
+</body>
+
+</html>
